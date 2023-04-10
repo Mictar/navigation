@@ -1,2 +1,2 @@
 # navigation
-navigation robot 2D
+packages navigation robot 2D
