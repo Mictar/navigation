@@ -1,0 +1,11 @@
+# definition du but a parcourir
+float32[] x
+float32[] y
+---
+# definition du resultat final
+float32 x
+float32 y
+---
+# definition des commentaires ( feedback )
+float32 x
+float32 y
