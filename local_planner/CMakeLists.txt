@@ -128,11 +128,11 @@ include_directories(
 )
 
 ## Declare a C++ library
- add_library(planner
-	 include/${PROJECT_NAME}/local_planner.cpp include/${PROJECT_NAME}/local_planner.hpp
- )
+# add_library(planner
+#	 include/${PROJECT_NAME}/local_planner.cpp include/${PROJECT_NAME}/local_planner.hpp
+# )
 
-target_link_libraries(planner ${catkin_LIBRARIES})
+#target_link_libraries(planner ${catkin_LIBRARIES})
 #add_dependencies(planner ${local_planner_EXPORTED_TARGETS})
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -214,10 +214,10 @@ target_link_libraries(planner ${catkin_LIBRARIES})
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
-add_executable(local_planner src/main.cpp)
-target_link_libraries(local_planner ${catkin_LIBRARIES} planner)
-add_dependencies(local_planner ${local_planner_EXPORTED_TARGETS})
+add_executable(convert src/convert.cpp)
+target_link_libraries(convert ${catkin_LIBRARIES} )
+add_dependencies(convert local_planner_generate_messages_cpp)
 
-#add_executable(move src/move.cpp)
-#target_link_libraries(move ${catkin_LIBRARIES})
-#add_dependencies(move ${local_planner_EXPORTED_TARGETS})
+add_executable(move src/move.cpp)
+target_link_libraries(move ${catkin_LIBRARIES})
+add_dependencies(move local_planner_generate_messages_cpp)

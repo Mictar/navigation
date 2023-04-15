@@ -1,0 +1,5 @@
+# definition de la distance de navigation
+float32 distance
+---
+# definition du resultat de la navigation
+bool etat

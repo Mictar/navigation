@@ -1,100 +1,116 @@
-#include <ros/ros.h>
-#include <tf/tf.h>
+#include <memory>
+#include <functional>
+#include <cmath>
 #include <geometry_msgs/Twist.h>
+#include <geometry_msgs/Point.h>
+#include <ros/ros.h>
+
 #include <geometry_msgs/Pose2D.h>
-#include <nav_msgs/Odometry.h>
 
-#include <math.h>
+using std::placeholders::_1;
 
-geometry_msgs::Pose2D current_pose;
-ros::Publisher pub_pose2d;
-
-void odomCallback(const nav_msgs::OdometryConstPtr& msg)
+class Move
 {
-    // linear position
-    current_pose.x = msg->pose.pose.position.x;
-    current_pose.y = msg->pose.pose.position.y;
-    
-    // quaternion to RPY conversion
-    tf::Quaternion q(
-        msg->pose.pose.orientation.x,
-        msg->pose.pose.orientation.y,
-        msg->pose.pose.orientation.z,
-        msg->pose.pose.orientation.w);
-    tf::Matrix3x3 m(q);
-    double roll, pitch, yaw;
-    m.getRPY(roll, pitch, yaw);
-    
-    // angular position
-    current_pose.theta = yaw;
-    pub_pose2d.publish(current_pose);
+	private:
+		ros::NodeHandle node;
+
+		ros::Subscriber robot_pose;
+
+		ros::Subscriber goal;
+
+		ros::Publisher cmd;
+
+		geometry_msgs::Point current_goal;
+
+		void robotPoseCallback(const geometry_msgs::Pose2D::ConstPtr& pose);
+
+		void goalCallback(const geometry_msgs::Point::ConstPtr& goal);
+
+		float kp = 0.5;
+		bool start = false;
+	public:
+		Move(std::string name);
+};
+
+Move::Move(std::string name="Move")
+{
+	ROS_INFO( "Demarrage du topic move");
+
+	robot_pose = node.subscribe(
+			"pose2d",
+			10, 
+			&Move::robotPoseCallback, 
+			this);
+
+	goal = node.subscribe(
+			"goal",
+			10,
+			&Move::goalCallback,
+		       	this);
+
+	cmd =  node.advertise<geometry_msgs::Twist>("cmd_vel", 10);
+
 }
 
-int main(int argc, char **argv)
+void Move::robotPoseCallback(const geometry_msgs::Pose2D::ConstPtr& pose)
 {
-    const double PI = 3.14159265358979323846;
-    
-    ROS_INFO("start");
-    
-    ros::init(argc, argv, "move_pub");
-    ros::NodeHandle n;
-    ros::Subscriber sub_odometry = n.subscribe("odom", 10, odomCallback);
-    ros::Publisher movement_pub = n.advertise("cmd_vel",10); //for sensors the value after , should be higher to get a more accurate result (queued)
-    pub_pose2d = n.advertise("turtlebot_pose2d", 10);
-    ros::Rate rate(10); //the larger the value, the "smoother" , try value of 1 to see "jerk" movement
-    
-    //move forward
-    ROS_INFO("move forward");
-    ros::Time start = ros::Time::now();
-    while(ros::ok() && current_pose.x < 1.5) {
-	    geometry_msgs::Twist move; //velocity controls 
-	    move.linear.x = 0.2; //speed value m/s 
-	    move.angular.z = 0; 
-	    movement_pub.publish(move); 
-	    ros::spinOnce(); 
-	    rate.sleep();
-    } //turn right
-    ROS_INFO("turn right"); 
-    
-    ros::Time start_turn = ros::Time::now(); 
-    
-    while(ros::ok() && current_pose.theta > -PI/2)
-    {
-        geometry_msgs::Twist move;
-        //velocity controls
-        move.linear.x = 0; //speed value m/s
-        move.angular.z = -0.3;
-        movement_pub.publish(move);
-    
-        ros::spinOnce();
-        rate.sleep();
-    }
-    //move forward again
-    ROS_INFO("move forward");
-    ros::Time start2 = ros::Time::now();
-    while(ros::ok() && current_pose.y > -1.5)
-    {
-        geometry_msgs::Twist move;
-        //velocity controls
-        move.linear.x = 0.2; //speed value m/s
-        move.angular.z = 0;
-        movement_pub.publish(move);
-    
-        ros::spinOnce();
-        rate.sleep();
-    }
-    
-    // just stop
-    while(ros::ok()) {
-        geometry_msgs::Twist move;
-        move.linear.x = 0;
-        move.angular.z = 0;
-        movement_pub.publish(move);
-    
-        ros::spinOnce();
-        rate.sleep();
-    }
-    
-    return 0;
+	float new_x = current_goal.x - pose -> x;
+	float new_y = current_goal.y - pose -> y;
+	
+
+	float angle_to_goal = atan2(new_y, new_x);
+
+	auto cmd_vel = geometry_msgs::Twist();
+	
+	float diff_goal_x = std::abs(pose -> x - current_goal.x);
+	float diff_goal_y = std::abs(pose -> y - current_goal.y);
+	float diff_angle = angle_to_goal - pose -> theta ;
+	
+	ROS_INFO( "%f, %f, %f", diff_goal_x, diff_goal_y, diff_angle);
+
+	if ( start )
+	{
+		if ( diff_goal_x < 0.1 && diff_goal_y )
+		{
+			cmd_vel.linear.x = 0.0;
+			cmd_vel.angular.z = 0.0;
+		}
+
+		else if ( std::abs( diff_angle ) > 0.1 )
+		{
+			cmd_vel.linear.x = 0.0;
+			cmd_vel.angular.z = kp * diff_angle;
+		}
+		else
+		{
+			cmd_vel.linear.x = 0.2;
+			cmd_vel.angular.z = 0.0;
+		}
+
+		cmd.publish(cmd_vel);
+	}
+
 }
 
+void Move::goalCallback(const geometry_msgs::Point::ConstPtr& goal)
+{
+	ROS_INFO( "Current goal is : %f, %f, %f", goal -> x, goal -> y, goal -> z);
+
+	current_goal = *goal;
+
+	if(! start)
+	       start = true;
+}
+
+int main(int argc, char** argv)
+{
+	ros::init(argc, argv, "Move");
+
+	Move move;
+
+	ros::spin(  );
+
+	return 0;
+}
+
+		

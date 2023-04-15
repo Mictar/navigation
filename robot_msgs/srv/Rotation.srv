@@ -1,0 +1,4 @@
+# definition de l'angle de rotation
+float32 angle
+---
+bool etat
