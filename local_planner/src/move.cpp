@@ -27,13 +27,14 @@ class Move
 		void goalCallback(const geometry_msgs::Point::ConstPtr& goal);
 
 		float kp = 0.5;
-		bool start = false;
+		
 	public:
 		Move(std::string name);
 };
 
 Move::Move(std::string name="Move")
 {
+	current_goal.x = 0, current_goal.y = 0, current_goal.z = 0;
 	ROS_INFO( "Demarrage du topic move");
 
 	robot_pose = node.subscribe(
@@ -62,13 +63,14 @@ void Move::robotPoseCallback(const geometry_msgs::Pose2D::ConstPtr& pose)
 
 	auto cmd_vel = geometry_msgs::Twist();
 	
+
 	float diff_goal_x = std::abs(pose -> x - current_goal.x);
 	float diff_goal_y = std::abs(pose -> y - current_goal.y);
 	float diff_angle = angle_to_goal - pose -> theta ;
 	
 	ROS_INFO( "%f, %f, %f", diff_goal_x, diff_goal_y, diff_angle);
 
-	if ( start )
+	
 	{
 		if ( diff_goal_x < 0.1 && diff_goal_y )
 		{
@@ -98,8 +100,6 @@ void Move::goalCallback(const geometry_msgs::Point::ConstPtr& goal)
 
 	current_goal = *goal;
 
-	if(! start)
-	       start = true;
 }
 
 int main(int argc, char** argv)
