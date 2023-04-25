@@ -210,7 +210,12 @@ include_directories(
 
 add_executable(nav_rviz src/nav_with_rviz.cpp)
 target_link_libraries(nav_rviz ${catkin_LIBRARIES})
+
+add_executable(nav_points src/nav_point_by_point.cpp)
+target_link_libraries(nav_points ${catkin_LIBRARIES})
+
 install(TARGETS
 	nav_rviz
+	nav_points
 	DESTINATION lib/${PROJECT_NAME}
 	)

@@ -18,7 +18,7 @@ class NavRviz
 			pub_goal.publish(pose);
 		}
 	public:
-		NavRviz( std::string goal_topic="goal",
+		NavRviz( std::string goal_topic="move_goal",
 			 std::string rviz_goal_topic="move_base_simple/goal") {
 			
 			ROS_INFO("Demarrage du server de navigation par rviz");

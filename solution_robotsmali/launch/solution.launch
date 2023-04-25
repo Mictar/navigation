@@ -1,5 +1,6 @@
 <launch>
 	<node pkg="local_planner" type="convert" name="local_planner" />
 	<node pkg="local_planner" type="move" name="move" />
-	<node pkg="solution_robotsmali" type="nav_rviz" name="navigatio_with_rivz" />
+	<node pkg="solution_robotsmali" type="nav_points" name="navigation_with_point" output="screen" />
+	<!-- <node pkg="rviz" type="rviz" name="rivz" /> -->
 </launch>
